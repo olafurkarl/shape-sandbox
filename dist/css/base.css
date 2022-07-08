@@ -1,0 +1,10 @@
+html,
+body {
+  height: 100%;
+}
+body {
+  background-color: #242234;
+}
+input {
+  background-color: #00ff00;
+}
