@@ -1,0 +1,31 @@
+.debug {
+    float: left;
+    color: #e3e3e3;
+    font-size: 14px;
+    width: 300px;
+    user-select: none;
+}
+
+.debugContainer {
+    height: 1.5em;
+}
+
+.debugValue {
+    float: right;
+    width: 100%;
+    word-wrap: break-word;
+}
+
+.debugLabel {
+    float: left;
+}
+
+input[type="range"] {
+    width: 100%;
+}
+
+.debug ul {
+    padding-inline-start: 10px;
+    list-style: none;
+    margin-block-start: 0px;
+}

@@ -8,3 +8,28 @@ body {
 input {
   background-color: #00ff00;
 }
+
+body::after {
+    content: "";
+    background-image: url('../assets/maths.png');
+    opacity: 0.3;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    position: absolute;
+    z-index: -1;   
+    background-repeat: no-repeat;
+    background-size: auto;
+}
+
+
+#maths {
+    position: absolute;
+    right: 0;
+    width: 714px;
+    height: auto;
+    float: right;
+    opacity: 0.5;
+    z-index: -3;
+}
