@@ -1,7 +1,13 @@
 import * as PIXI from "pixi.js";
 import { Pane } from "tweakpane";
-import { getRectangleInsideTriangle, getTriangleCentroid } from "./triangle";
-import { Point } from "./types";
+import {
+  getCandidateLinesFromTrianglePoints,
+  getLinesOfTriangle,
+  getRectangleInsideTriangle,
+  getRightAngleIntersections,
+  getTriangleCentroid,
+} from "./triangle";
+import { Line, Point } from "./types";
 
 const VIEW_W = 800;
 const VIEW_H = 600;
@@ -21,8 +27,6 @@ document.body.appendChild(app.view);
 const mainContainer = new PIXI.Container();
 mainContainer.hitArea = new PIXI.Rectangle(0, 0, VIEW_W, VIEW_H);
 
-app.ticker.speed = 0.5;
-
 app.stage.addChild(mainContainer);
 
 const triangle = {
@@ -31,42 +35,51 @@ const triangle = {
   c: { x: 100, y: 180 },
 };
 
+let oldRectanglePoints: any[] = [];
+let rectanglePoints: any[] = [];
+
 const debugPane = new Pane({
   title: "Triangle",
   container: document.getElementById("debug")!,
 });
 
-const triangleDerivedValues: { centroid: Point | undefined } = {
+const triangleDerivedValues = {
   centroid: { x: 5, y: 5 },
+  rectangle: "",
 };
 
 const debugSettings = {
   x: { step: 1, min: 0, max: VIEW_W },
   y: { step: 1, min: 0, max: VIEW_H },
-  picker: 'inline'
+  picker: "inline",
 };
 debugPane.addInput(triangle, "a", debugSettings);
 debugPane.addInput(triangle, "b", debugSettings);
 debugPane.addInput(triangle, "c", debugSettings);
 debugPane.addInput(triangleDerivedValues, "centroid", { disabled: true });
+debugPane.addMonitor(triangleDerivedValues, "rectangle", {
+  disabled: false,
+  multiline: true,
+  lineCount: 30,
+});
+debugPane.exportPreset();
 const updatePointHandlers: (() => void)[] = [];
 debugPane.on("change", () => {
-    updatePointHandlers.forEach((h) => {
-        h();
-    })
-    updateDerivedValues();
+  updatePointHandlers.forEach((h) => {
+    h();
+  });
+  updateDerivedValues();
 });
 
 const drawPoint = (
   gfx: PIXI.Graphics,
   clear = true,
   fill = 0x285cc4,
-  line = 0x143464,
+  line = 0x143464
 ): void => {
-    if (clear) {
-        gfx.clear();
-
-    }
+  if (clear) {
+    gfx.clear();
+  }
   gfx.lineStyle(1, line, 1);
   gfx.beginFill(fill);
   gfx.drawCircle(0, 0, 3);
@@ -82,16 +95,35 @@ drawPoint(centroidPoint);
 mainContainer.addChild(centroidPoint);
 
 const collisionPoints = [
-    new PIXI.Graphics(),
-    new PIXI.Graphics(),
-    new PIXI.Graphics(),
-    new PIXI.Graphics(),
-    new PIXI.Graphics(),
-    new PIXI.Graphics(),
-    new PIXI.Graphics(),
-    new PIXI.Graphics(),
-]
+  new PIXI.Graphics(),
+  new PIXI.Graphics(),
+  new PIXI.Graphics(),
+  new PIXI.Graphics(),
+];
 
+const maybePoints = [
+  new PIXI.Graphics(),
+  new PIXI.Graphics(),
+  new PIXI.Graphics(),
+  new PIXI.Graphics(),
+];
+
+const linesGfx = new PIXI.Graphics();
+
+const drawLines = (lines: Line[]) => {
+  linesGfx.clear();
+  linesGfx.lineStyle(4, 0x59c135, 0.8);
+  lines.forEach((line) => {
+    linesGfx.moveTo(line.a.x, line.a.y);
+    linesGfx.lineTo(line.b.x, line.b.y);
+  });
+};
+
+const oldRectangleGfx = new PIXI.Graphics();
+mainContainer.addChild(oldRectangleGfx);
+
+const rectangleGfx = new PIXI.Graphics();
+mainContainer.addChild(rectangleGfx);
 
 const updateDerivedValues = () => {
   const triangleCentroid = getTriangleCentroid(triangle);
@@ -102,14 +134,36 @@ const updateDerivedValues = () => {
 
   const points = getRectangleInsideTriangle(triangle);
   collisionPoints.forEach((p) => p.clear);
-  console.log(points);
   collisionPoints.forEach((p, i) => {
     if (points[i]) {
-        p.x = points[i].x;
-        p.y = points[i].y;
-        drawPoint(p, false, 0xff00ff);
+      p.x = points[i].x;
+      p.y = points[i].y;
+      drawPoint(p, false, 0xff00ff);
     }
-  })
+  });
+  const markedRectanglePoints = getCandidateLinesFromTrianglePoints(points);
+  console.log(markedRectanglePoints);
+  oldRectanglePoints = Object.values(JSON.parse(JSON.stringify(markedRectanglePoints)));
+  const rightAngleLines = getRightAngleIntersections(
+    markedRectanglePoints,
+    getLinesOfTriangle(triangle)
+  );
+  console.log(markedRectanglePoints);
+
+  rectanglePoints = Object.values(markedRectanglePoints);
+  maybePoints.forEach((p, i) => {
+    if (rectanglePoints[i]) {
+      p.x = rectanglePoints[i].x;
+      p.y = rectanglePoints[i].y;
+      drawPoint(p, false, 0x00ff00);
+    }
+  });
+  triangleDerivedValues.rectangle = JSON.stringify(
+    { count: rightAngleLines.length, rightAngleLines },
+    null,
+    2
+  );
+  drawLines(rightAngleLines);
 };
 
 const addDraggablePoints = (points: Record<string, Point>) => {
@@ -162,9 +216,9 @@ const addDraggablePoints = (points: Record<string, Point>) => {
   }
 };
 
-const updateShape = (graphics: PIXI.Graphics, points: Point[]) => {
+const updateShape = (graphics: PIXI.Graphics, points: Point[], fill = 0x143464) => {
   graphics.clear();
-  graphics.beginFill(0x143464, 0.3);
+  graphics.beginFill(fill, 0.3);
   graphics.lineStyle(4, 0x249fde, 0.8);
   graphics.moveTo(points[0].x, points[0].y);
   points.forEach((point) => {
@@ -177,14 +231,21 @@ const updateShape = (graphics: PIXI.Graphics, points: Point[]) => {
 const triangleGraphics = new PIXI.Graphics();
 mainContainer.addChild(triangleGraphics);
 collisionPoints.forEach((p) => {
-    mainContainer.addChild(p);
-})
+  mainContainer.addChild(p);
+});
+maybePoints.forEach((p) => {
+  mainContainer.addChild(p);
+});
+mainContainer.addChild(linesGfx);
 
 addDraggablePoints(triangle);
 updateDerivedValues();
 app.ticker.add((delta) => {
   debugPane.refresh();
   updateShape(triangleGraphics, [...Object.values(triangle)]);
+  updateShape(rectangleGfx, rectanglePoints);
+  updateShape(oldRectangleGfx, oldRectanglePoints, 0xff00ff);
+//   updateDerivedValues();
 });
 
 export {};

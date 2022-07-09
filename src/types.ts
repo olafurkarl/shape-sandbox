@@ -3,6 +3,8 @@ export interface Point {
     y: number;
 }
 
+export type Direction = Point;
+
 export interface Triangle {
     a: Point;
     b: Point;
@@ -19,4 +21,9 @@ export interface Quad {
     b: Point;
     c: Point;
     d: Point;
+}
+
+export interface Ray {
+    start: Point;
+    direction: Direction;
 }
