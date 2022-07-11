@@ -3,46 +3,6 @@
 
 import { Line, Point, Ray } from "./types";
 
-// Return FALSE if the lines don't intersect
-export function intersect(line1: Line, line2: Line) {
-  // Check if none of the lines are of length 0
-  if (
-    (line1.a.x === line1.b.x && line1.a.y === line1.b.y) ||
-    (line2.a.x === line2.b.x && line2.a.y === line2.b.y)
-  ) {
-    return false;
-  }
-
-  const denominator =
-    (line2.b.y - line2.a.y) * (line1.b.x - line1.a.x) -
-    (line2.b.x - line2.a.x) * (line1.b.y - line1.a.y);
-
-  // Lines are parallel
-  if (denominator === 0) {
-    return false;
-  }
-
-  let ua =
-    ((line2.b.x - line2.a.x) * (line1.a.y - line2.a.y) -
-      (line2.b.y - line2.a.y) * (line1.a.x - line2.a.x)) /
-    denominator;
-  let ub =
-    ((line1.b.x - line1.a.x) * (line1.a.y - line2.a.y) -
-      (line1.b.y - line1.a.y) * (line1.a.x - line2.a.x)) /
-    denominator;
-
-  // is the intersection along the segments
-  if (ua < 0 || ua > 1 || ub < 0 || ub > 1) {
-    return false;
-  }
-
-  // Return a object with the x and y coordinates of the intersection
-  let x = line1.a.x + ua * (line1.b.x - line1.a.x);
-  let y = line1.a.y + ua * (line1.b.y - line1.a.y);
-
-  return { x, y };
-}
-
 const dotProduct = (a: Point, b: Point) => (a.x * b.x) + (a.y * b.y);
 
 const subtractVector = (p1: Point, p2: Point): Point => ({

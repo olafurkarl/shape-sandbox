@@ -68,10 +68,6 @@ export function lineDistance(p1OrLine: Point | Line, p2?: Point): number {
   throw Error("Invalid parameters supplied.");
 }
 
-// export const lineDistance = (p1: Point, p2: Point) => {
-//   return Math.hypot(p2.x - p1.x, p2.y - p1.y);
-// };
-
 type MarkedRectangle = Record<
   "topLeft" | "topRight" | "bottomRight" | "bottomLeft",
   Point
@@ -117,19 +113,19 @@ export const getRightAngleIntersections = (
     y: Math.sin(0),
   };
 
-  let whichHorizontal: 'Left' | 'Right' | 'Neither' = 'Neither';
+  let whichHorizontal: "Left" | "Right" | "Neither" = "Neither";
   const pairRight = [origins.topRight, origins.bottomRight];
   const pairLeft = [origins.topLeft, origins.bottomLeft];
   const results: {
     horizontal?: {
-        x: number;
-        which: 'Left' | 'Right';
+      x: number;
+      which: "Left" | "Right";
     };
     vertical?: number;
   } = {};
 
   lines.forEach((l) => {
-    whichHorizontal = 'Neither';
+    whichHorizontal = "Neither";
     const candidateLines: (Line & { dest: Point })[] = [];
     const minDistanceRight = getMinDistance(pairRight, l, horizontalDirection);
     const minDistanceLeft = getMinDistance(pairLeft, l, horizontalDirection);
@@ -138,18 +134,15 @@ export const getRightAngleIntersections = (
     if (Math.floor(Math.min(minDistanceRight, minDistanceLeft)) === 0) {
       return;
     }
-    const closerPair = minDistanceRight < minDistanceLeft ? pairRight : pairLeft;
+    const closerPair =
+      minDistanceRight < minDistanceLeft ? pairRight : pairLeft;
 
     if (!bothIntersect(closerPair, l, horizontalDirection)) {
-      console.log("both closer pairs dont intersect");
       return;
-    } else {
-        console.log("at least one pair intersects")
-    }
+    } 
 
-    whichHorizontal = minDistanceRight < minDistanceLeft ? 'Right' : 'Left';
+    whichHorizontal = minDistanceRight < minDistanceLeft ? "Right" : "Left";
 
-    console.log("minDistance", Math.min(minDistanceRight, minDistanceLeft));
     closerPair.forEach((o) => {
       const ray = {
         start: o,
@@ -160,85 +153,42 @@ export const getRightAngleIntersections = (
       }
       const point = lineRayIntersection(l, ray);
       if (point) {
-        console.log("candidate distance", lineDistance(o, point))
         candidateLines.push({ a: o, b: point, dest: point });
       }
     });
-    // sort by line distance
-    // candidateLines.sort((a, b) => lineDistance(b.a, b.b) - lineDistance(a.a, a.b));
 
-    // resultLines.push(...candidateLines.splice(2, 2).filter((l) => lineDistance(l.a, l.b) > 0));
     const sorted = candidateLines
-    .map((line) => ({ line, distance: lineDistance(line.a, line.b) }))
-    .sort((a, b) => a.distance - b.distance);
-    console.log("sorted", sorted)
-    const newX = sorted
-    .at(0)?.line.dest.x;
+      .map((line) => ({ line, distance: lineDistance(line.a, line.b) }))
+      .sort((a, b) => a.distance - b.distance);
+    const newX = sorted.at(0)?.line.dest.x;
 
-    console.log("newX", newX, whichHorizontal)
     if (!newX) return;
     results.horizontal = {
-        x: newX,
-        which: whichHorizontal
-    }
+      x: newX,
+      which: whichHorizontal,
+    };
     resultLines.push(...candidateLines);
   });
 
-    if (results.horizontal) {
-        const { which, x } = results.horizontal;
-        console.log("modifying right")
-        if (which === 'Left') {
-            console.log("modifying left")
-            console.log(`replaced ${origins.bottomLeft.x} with ${x}`)
-            console.log(`replaced ${origins.topLeft.x} with ${x}`)
-            origins.bottomLeft.x = x;
-            origins.topLeft.x = x;
-        }
-        if (which === 'Right') {
-            console.log("modifying right")
-            console.log(`replaced ${origins.bottomRight.x} with ${x}`)
-            console.log(`replaced ${origins.topRight.x} with ${x}`)
-            origins.topRight.x = x;
-            origins.bottomRight.x = x;
-        }
+  if (results.horizontal) {
+    const { which, x } = results.horizontal;
+    if (which === "Left") {
+      origins.bottomLeft.x = x;
+      origins.topLeft.x = x;
     }
-
-
-  // get all vertical rays (4)
-  //   const ninetyDegreesInRad = 90 * (Math.PI / 180);
-  //   const verticalDirection = {
-  //     x: Math.cos(ninetyDegreesInRad),
-  //     y: Math.sin(ninetyDegreesInRad),
-  //   };
-
-  //   origins.forEach((o) => {
-  //     lines.forEach((l) => {
-  //       const ray = {
-  //         start: o,
-  //         direction: verticalDirection,
-  //       };
-  //     //   if (!onOneSide(ray, l)) {
-  //     //     return;
-  //     //   }
-  //       const point = lineRayIntersection(l, ray);
-  //       if (point) {
-  //         resultLines.push({ a: o, b: point });
-  //       }
-  //     });
-  //   });
-
-  console.log(resultLines.length);
+    if (which === "Right") {
+      origins.topRight.x = x;
+      origins.bottomRight.x = x;
+    }
+  }
 
   return resultLines;
-
-  // find each point that's on the interaction of the rays
 };
 
 export const getCandidateLinesFromTrianglePoints = (points: Point[]) => {
   const sortByX = [...points.sort((a, b) => a.x - b.x).map((p) => p.x)];
   const sortByY = [...points.sort((a, b) => a.y - b.y).map((p) => p.y)];
 
-  console.log();
   return {
     topRight: {
       x: sortByX[2],
